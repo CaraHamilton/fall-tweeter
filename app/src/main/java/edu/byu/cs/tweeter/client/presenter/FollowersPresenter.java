@@ -1,13 +1,14 @@
 package edu.byu.cs.tweeter.client.presenter;
 
-import java.util.List;
+import android.widget.Toast;
 
+import java.util.List;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class FollowingPresenter {
+public class FollowersPresenter {
 
     private static final int PAGE_SIZE = 10;
 
@@ -15,18 +16,18 @@ public class FollowingPresenter {
     private FollowService followService;
     private UserService userService;
 
-    private User lastFollowee;
+    private User lastFollower;
     private boolean hasMorePages;
     private boolean isLoading = false;
 
     public interface View {
         void displayMessage(String message);
         void setLoadingFooter(Boolean set);
-        void addFollowees(List<User> followees);
+        void addFollowers(List<User> followers);
         void startNewActivity(User user);
     }
 
-    public FollowingPresenter(View view) {
+    public FollowersPresenter(View view) {
         this.view = view;
         followService = new FollowService();
         userService = new UserService();
@@ -39,38 +40,40 @@ public class FollowingPresenter {
         return hasMorePages;
     }
 
+
     public void loadMoreItems(User user) {
         isLoading = true;
         view.setLoadingFooter(true);
-
-        followService.loadMoreItems(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastFollowee, new GetFollowingObserver());
+        followService.loadMoreItemsFollowers(Cache.getInstance().getCurrUserAuthToken(),
+                user, PAGE_SIZE, lastFollower, new GetFollowersObserver());
     }
 
     public void getUser(String userAlias) {
         userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new GetUserObserver());
     }
 
-    private class GetFollowingObserver implements FollowService.GetFollowingObserver {
+    private class GetFollowersObserver implements FollowService.GetFollowersObserver {
+
         @Override
-        public void addFollowees(List<User> followees, boolean hasMorePages) {
+        public void addFollowers(List<User> followers, boolean hasMorePages) {
             isLoading = false;
             view.setLoadingFooter(false);
-            lastFollowee = (followees.size() > 0) ? followees.get(followees.size() - 1) : null;
-            view.addFollowees(followees);
-            FollowingPresenter.this.hasMorePages = hasMorePages;
+            lastFollower = (followers.size() > 0) ? followers.get(followers.size() - 1) : null;
+            view.addFollowers(followers);
+            FollowersPresenter.this.hasMorePages = hasMorePages;
         }
 
         @Override
-        public void displayErrorMessage(String message) {
+        public void handleFailure(String message) {
             isLoading = false;
-            view.displayMessage("Failed to get following: " + message);
+            view.displayMessage("Failed to get followers: " + message);
             view.setLoadingFooter(false);
         }
 
         @Override
-        public void displayError(Exception ex) {
+        public void handleException(Exception ex) {
             isLoading = false;
-            view.displayMessage("Failed to get following because of exception: " + ex.getMessage());
+            view.displayMessage("Failed to get followers because of exception: " + ex.getMessage());
             view.setLoadingFooter(false);
         }
     }

@@ -3,32 +3,33 @@ package edu.byu.cs.tweeter.client.presenter;
 import java.util.List;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
-import edu.byu.cs.tweeter.client.model.service.FollowService;
+import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class FollowingPresenter {
+public class StoryPresenter {
 
     private static final int PAGE_SIZE = 10;
 
     private View view;
-    private FollowService followService;
     private UserService userService;
+    private StatusService statusService;
 
-    private User lastFollowee;
+    private Status lastStatus;
     private boolean hasMorePages;
     private boolean isLoading = false;
 
     public interface View {
         void displayMessage(String message);
         void setLoadingFooter(Boolean set);
-        void addFollowees(List<User> followees);
+        void addStatus(List<Status> statuses);
         void startNewActivity(User user);
     }
 
-    public FollowingPresenter(View view) {
+    public StoryPresenter(View view) {
         this.view = view;
-        followService = new FollowService();
+        statusService = new StatusService();
         userService = new UserService();
     }
 
@@ -43,34 +44,37 @@ public class FollowingPresenter {
         isLoading = true;
         view.setLoadingFooter(true);
 
-        followService.loadMoreItems(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastFollowee, new GetFollowingObserver());
+        statusService.loadMoreItemsStory(Cache.getInstance().getCurrUserAuthToken(),
+                user, PAGE_SIZE, lastStatus, new GetStoryObserver());
     }
 
     public void getUser(String userAlias) {
-        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new GetUserObserver());
+        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias,
+                new GetUserObserver());
     }
 
-    private class GetFollowingObserver implements FollowService.GetFollowingObserver {
+    private class GetStoryObserver implements StatusService.GetStoryObserver {
+
         @Override
-        public void addFollowees(List<User> followees, boolean hasMorePages) {
+        public void addStatus(List<Status> story, boolean hasMorePages) {
             isLoading = false;
             view.setLoadingFooter(false);
-            lastFollowee = (followees.size() > 0) ? followees.get(followees.size() - 1) : null;
-            view.addFollowees(followees);
-            FollowingPresenter.this.hasMorePages = hasMorePages;
+            lastStatus = (story.size() > 0) ? story.get(story.size() - 1) : null;
+            view.addStatus(story);
+            StoryPresenter.this.hasMorePages = hasMorePages;
         }
 
         @Override
-        public void displayErrorMessage(String message) {
+        public void handleFailure(String message) {
             isLoading = false;
-            view.displayMessage("Failed to get following: " + message);
+            view.displayMessage("Failed to get story: " + message);
             view.setLoadingFooter(false);
         }
 
         @Override
-        public void displayError(Exception ex) {
+        public void handleException(Exception ex) {
             isLoading = false;
-            view.displayMessage("Failed to get following because of exception: " + ex.getMessage());
+            view.displayMessage("Failed to get story because of exception: " + ex.getMessage());
             view.setLoadingFooter(false);
         }
     }
