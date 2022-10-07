@@ -5,18 +5,16 @@ import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class LoginPresenter {
+public class LoginPresenter extends Presenter<LoginPresenter.View>{
 
-    private View view;
     private UserService userService;
 
-    public interface View {
-        void displayMessage(String message);
+    public interface View extends ViewBase{
         void startNewActivity(User user);
     }
 
     public LoginPresenter(View view) {
-        this.view = view;
+        super(view);
         userService = new UserService();
     }
 
