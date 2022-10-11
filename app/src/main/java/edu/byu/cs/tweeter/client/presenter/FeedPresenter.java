@@ -4,63 +4,34 @@ import java.util.List;
 
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.StatusService;
-import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class FeedPresenter {
+public class FeedPresenter extends PagedPresenter<Status>{
 
-    private static final int PAGE_SIZE = 10;
-
-    private View view;
     private StatusService statusService;
-    private UserService userService;
 
-    private Status lastStatus;
-    boolean hasMorePages;
-    private boolean isLoading;
-
-    public interface View {
-        void displayMessage(String message);
-        void setLoadingFooter(Boolean set);
-        void addStatus(List<Status> feed);
-        void startNewActivity(User user);
-    }
+    public interface View extends ViewPages<Status>{ }
 
     public FeedPresenter(View view) {
-        this.view = view;
+        super(view);
         statusService = new StatusService();
-        userService = new UserService();
     }
 
-    public boolean isLoading() {
-        return isLoading;
-    }
-    public boolean hasMorePages() {
-        return hasMorePages;
-    }
-
-    public void loadMoreItems(User user) {
-        isLoading = true;
-        view.setLoadingFooter(true);
-
-        statusService.loadMoreItemsFeed(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastStatus, new GetFeedObserver());
-    }
-
-    public void getUser(String userAlias) {
-        userService.getUser(Cache.getInstance().getCurrUserAuthToken(),
-                userAlias, new GetUserObserver());
+    @Override
+    public void getItems(User user) {
+        statusService.loadMoreItemsFeed(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastItem, new GetFeedObserver());
     }
 
     private class GetFeedObserver implements StatusService.GetFeedObserver {
 
         @Override
-        public void addStatus(List<Status> statuses, boolean hasMorePages) {
+        public void handleSuccess(List<Status> items, boolean value) {
             isLoading = false;
             view.setLoadingFooter(false);
-            lastStatus = (statuses.size() > 0) ? statuses.get(statuses.size() - 1) : null;
-            view.addStatus(statuses);
-            FeedPresenter.this.hasMorePages = hasMorePages;
+            lastItem = (items.size() > 0) ? items.get(items.size() - 1) : null;
+            view.addItems(items);
+            hasMorePages = value;
         }
 
         @Override
@@ -75,26 +46,6 @@ public class FeedPresenter {
             isLoading = false;
             view.displayMessage("Failed to get feed because of exception: " + ex.getMessage());
             view.setLoadingFooter(false);
-        }
-    }
-
-
-    private class GetUserObserver implements UserService.GetUserObserver {
-
-        @Override
-        public void handleSuccess(User user) {
-            view.displayMessage("Getting user's profile...");
-            view.startNewActivity(user);
-        }
-
-        @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get user's profile: " + message);
-        }
-
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get user's profile because of exception: " + exception.getMessage());
         }
     }
 }

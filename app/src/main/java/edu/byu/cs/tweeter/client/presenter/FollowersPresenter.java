@@ -1,66 +1,36 @@
 package edu.byu.cs.tweeter.client.presenter;
 
-import android.widget.Toast;
-
 import java.util.List;
+
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
-import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class FollowersPresenter {
+public class FollowersPresenter extends PagedPresenter<User>{
 
-    private static final int PAGE_SIZE = 10;
-
-    private View view;
     private FollowService followService;
-    private UserService userService;
 
-    private User lastFollower;
-    private boolean hasMorePages;
-    private boolean isLoading = false;
-
-    public interface View {
-        void displayMessage(String message);
-        void setLoadingFooter(Boolean set);
-        void addFollowers(List<User> followers);
-        void startNewActivity(User user);
-    }
+    public interface View extends ViewPages<User> { }
 
     public FollowersPresenter(View view) {
-        this.view = view;
+        super(view);
         followService = new FollowService();
-        userService = new UserService();
     }
 
-    public boolean isLoading() {
-        return isLoading;
-    }
-    public boolean hasMorePages() {
-        return hasMorePages;
-    }
-
-
-    public void loadMoreItems(User user) {
-        isLoading = true;
-        view.setLoadingFooter(true);
-        followService.loadMoreItemsFollowers(Cache.getInstance().getCurrUserAuthToken(),
-                user, PAGE_SIZE, lastFollower, new GetFollowersObserver());
-    }
-
-    public void getUser(String userAlias) {
-        userService.getUser(Cache.getInstance().getCurrUserAuthToken(), userAlias, new GetUserObserver());
+    @Override
+    public void getItems(User user) {
+        followService.loadMoreItemsFollowers(Cache.getInstance().getCurrUserAuthToken(), user, PAGE_SIZE, lastItem, new GetFollowersObserver());
     }
 
     private class GetFollowersObserver implements FollowService.GetFollowersObserver {
 
         @Override
-        public void addFollowers(List<User> followers, boolean hasMorePages) {
+        public void handleSuccess(List<User> items, boolean value) {
             isLoading = false;
             view.setLoadingFooter(false);
-            lastFollower = (followers.size() > 0) ? followers.get(followers.size() - 1) : null;
-            view.addFollowers(followers);
-            FollowersPresenter.this.hasMorePages = hasMorePages;
+            lastItem = (items.size() > 0) ? items.get(items.size() - 1) : null;
+            view.addItems(items);
+            FollowersPresenter.this.hasMorePages = value;
         }
 
         @Override
@@ -77,24 +47,4 @@ public class FollowersPresenter {
             view.setLoadingFooter(false);
         }
     }
-
-    private class GetUserObserver implements UserService.GetUserObserver {
-
-        @Override
-        public void handleSuccess(User user) {
-            view.displayMessage("Getting user's profile...");
-            view.startNewActivity(user);
-        }
-
-        @Override
-        public void handleFailure(String message) {
-            view.displayMessage("Failed to get user's profile: " + message);
-        }
-
-        @Override
-        public void handleException(Exception exception) {
-            view.displayMessage("Failed to get user's profile because of exception: " + exception.getMessage());
-        }
-    }
-
 }

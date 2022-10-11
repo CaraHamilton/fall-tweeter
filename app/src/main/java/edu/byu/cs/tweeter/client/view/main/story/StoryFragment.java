@@ -108,7 +108,7 @@ public class StoryFragment extends Fragment implements StoryPresenter.View {
     }
 
     @Override
-    public void addStatus(List<Status> statuses) {
+    public void addItems(List<Status> statuses) {
         storyRecyclerViewAdapter.addItems(statuses);
     }
 
