@@ -1,5 +1,7 @@
 package edu.byu.cs.tweeter.client.presenter;
 
+import android.widget.Toast;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -17,7 +19,6 @@ import edu.byu.cs.tweeter.model.domain.User;
 public class MainPresenter extends Presenter<MainPresenter.View>{
 
     private FollowService followService;
-    private StatusService statusService;
     private UserService userService;
 
     public interface View extends ViewBase {
@@ -31,8 +32,11 @@ public class MainPresenter extends Presenter<MainPresenter.View>{
     public MainPresenter(View view) {
         super(view);
         followService = new FollowService();
-        statusService = new StatusService();
         userService = new UserService();
+    }
+
+    protected StatusService getStatusService() {
+        return new StatusService();
     }
 
     public void logout() {
@@ -40,7 +44,9 @@ public class MainPresenter extends Presenter<MainPresenter.View>{
     }
 
     public void postStatus(Status newStatus) {
-        statusService.postStatus(Cache.getInstance().getCurrUserAuthToken(),
+        view.displayMessage("Posting Status...");
+
+        getStatusService().postStatus(Cache.getInstance().getCurrUserAuthToken(),
                 newStatus, new PostStatusObserver());
     }
 
