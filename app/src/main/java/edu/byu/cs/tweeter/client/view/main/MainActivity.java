@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
     public static final String CURRENT_USER_KEY = "CurrentUser";
 
     private Toast logOutToast;
-    private Toast postingToast;
     private User selectedUser;
     private TextView followeeCount;
     private TextView followerCount;
@@ -159,11 +158,8 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
 
     @Override
     public void onStatusPosted(String post) {
-        postingToast = Toast.makeText(this, "Posting Status...", Toast.LENGTH_LONG);
-        postingToast.show();
         try {
             Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), presenter.getFormattedDateTime(), presenter.parseURLs(post), presenter.parseMentions(post));
-            postingToast.cancel();
             presenter.postStatus(newStatus);
         } catch (Exception ex) {
             Log.e(LOG_TAG, ex.getMessage(), ex);
